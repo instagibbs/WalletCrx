@@ -77,7 +77,7 @@ angular.module('greenWalletControllers', [])
             var is_bip38 = window.WalletControllerInitVars.redeem_is_bip38 = Bitcoin.BIP38.isBIP38Format(redeem_key);
             var type = is_bip38 ? 'hash' : 'pubkey';
             if (type == 'hash') {
-                var hash_or_pubkey = Bitcoin.convert.wordArrayToBytes(Bitcoin.Util.sha256ripe160(redeem_key));
+                var hash_or_pubkey = BitcoinAux.wordArrayToBytes(Bitcoin.Util.sha256ripe160(redeem_key));
             } else {
                 var hash_or_pubkey = new Bitcoin.ECKey(redeem_key).getPub().toBytes();
             }

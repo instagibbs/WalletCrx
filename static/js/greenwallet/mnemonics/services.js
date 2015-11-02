@@ -44,8 +44,8 @@ angular.module('greenWalletMnemonicsServices', ['greenWalletServices'])
             while (retval.length < bits/8) retval.unshift(0);
 
             var checksum = binary.substr(bits);
-            var wordArray = Bitcoin.convert.bytesToWordArray(retval);
-            var hash = Bitcoin.convert.wordArrayToBytes(Bitcoin.CryptoJS.SHA256(wordArray));
+            var wordArray = BitcoinAux.bytesToWordArray(retval);
+            var hash = BitcoinAux.wordArrayToBytes(Bitcoin.CryptoJS.SHA256(wordArray));
             var binHash = '';
             for(var i = 0; i < hash.length; i++) {
                 var binPart = new Bitcoin.BigInteger(hash[i].toString()).toRadix(2);
@@ -76,8 +76,8 @@ angular.module('greenWalletMnemonicsServices', ['greenWalletServices'])
 
             var binary = Bitcoin.BigInteger.fromByteArrayUnsigned(data).toRadix(2);
             while (binary.length < data.length*8) { binary = '0' + binary; }
-            var bytes = Bitcoin.CryptoJS.SHA256(Bitcoin.convert.bytesToWordArray(data));
-            bytes = Bitcoin.convert.wordArrayToBytes(bytes);
+            var bytes = Bitcoin.CryptoJS.SHA256(BitcoinAux.bytesToWordArray(data));
+            bytes = BitcoinAux.wordArrayToBytes(bytes);
             var hash = Bitcoin.BigInteger.fromByteArrayUnsigned(bytes).toRadix(2);
             while (hash.length < 256) { hash = '0' + hash; }
             binary += hash.substr(0, data.length / 4);  // checksum

@@ -12,10 +12,10 @@ angular.module('greenWalletSendControllers',
             // decode the expected destination address
             var bytes = Bitcoin.base58.decode(destination);
             var hash = bytes.slice(0, 21);
-            var hash_words = Bitcoin.convert.bytesToWordArray(hash);
+            var hash_words = BitcoinAux.bytesToWordArray(hash);
 
             var checksum = Bitcoin.CryptoJS.SHA256(Bitcoin.CryptoJS.SHA256(hash_words));
-            checksum = Bitcoin.convert.wordArrayToBytes(checksum);
+            checksum = BitcoinAux.wordArrayToBytes(checksum);
 
             if (checksum[0] != bytes[21] ||
                 checksum[1] != bytes[22] ||
@@ -62,8 +62,8 @@ angular.module('greenWalletSendControllers',
                     return $scope.wallet.btchip.app.getWalletPublicKey_async("3'/"+$scope.wallet.current_subaccount+"'").then(function(result) {
                         var subaccount = new Bitcoin.HDWallet();
                         subaccount.network = cur_net;
-                        subaccount.pub = new Bitcoin.ECPubKey(Bitcoin.convert.hexToBytes(result.publicKey.toString(HEX)));
-                        subaccount.chaincode = Bitcoin.convert.hexToBytes(result.chainCode.toString(HEX));
+                        subaccount.pub = new Bitcoin.ECPubKey(BitcoinAux.hexToBytes(result.publicKey.toString(HEX)));
+                        subaccount.chaincode = BitcoinAux.hexToBytes(result.chainCode.toString(HEX));
                         subaccount.depth = 2;
                         subaccount.parentFingerprint = [1, 2, 3, 4];  // [HACK] not really the fingerprint, but we need some
                                                                       // value for toBytes to work in the deriving worker
@@ -92,8 +92,8 @@ angular.module('greenWalletSendControllers',
 
             var gawallet = new Bitcoin.HDWallet();
             gawallet.network = cur_net;
-            gawallet.pub = new Bitcoin.ECPubKey(Bitcoin.convert.hexToBytes(deposit_pubkey));
-            gawallet.chaincode = Bitcoin.convert.hexToBytes(deposit_chaincode);
+            gawallet.pub = new Bitcoin.ECPubKey(BitcoinAux.hexToBytes(deposit_pubkey));
+            gawallet.chaincode = BitcoinAux.hexToBytes(deposit_chaincode);
             gawallet.depth = 0;
             gawallet.index = 0;
             if ($scope.wallet.current_subaccount) {
@@ -124,7 +124,7 @@ angular.module('greenWalletSendControllers',
                 var script_to_hash = new Bitcoin.Script();
                 script_to_hash.writeOp(Bitcoin.Opcode.map.OP_2);
                 if ($scope.wallet.old_server) {
-                    script_to_hash.writeBytes(Bitcoin.convert.hexToBytes(deposit_pubkey));
+                    script_to_hash.writeBytes(BitcoinAux.hexToBytes(deposit_pubkey));
                 } else {
                     script_to_hash.writeBytes(change_gait_key.pub.toBytes(true));
                 }
@@ -132,10 +132,10 @@ angular.module('greenWalletSendControllers',
                 script_to_hash.writeOp(Bitcoin.Opcode.map.OP_2);
                 script_to_hash.writeOp(Bitcoin.Opcode.map.OP_CHECKMULTISIG);
 
-                var hash160 = Bitcoin.Util.sha256ripe160(Bitcoin.convert.bytesToWordArray(script_to_hash.buffer)).toString();
+                var hash160 = Bitcoin.Util.sha256ripe160(BitcoinAux.bytesToWordArray(script_to_hash.buffer)).toString();
                 for (var i = 0; i < tx.outs.length; i++) {
                     var chunks = tx.outs[i].script.chunks;
-                    if (chunks.length != 3 || Bitcoin.convert.bytesToHex(chunks[1]) != hash160) {
+                    if (chunks.length != 3 || BitcoinAux.bytesToHex(chunks[1]) != hash160) {
                         if (i == tx.outs.length - 1) {
                             return $q.reject(gettext('Missing change P2SH script'));
                         }
@@ -161,13 +161,13 @@ angular.module('greenWalletSendControllers',
                     if (chunks.length != 5) return $q.reject(gettext('Invalid pubkey hash script length'));
                     if (chunks[0] != Bitcoin.Opcode.map.OP_DUP) return $q.reject(gettext('OP_DUP missing'));
                     if (chunks[1] != Bitcoin.Opcode.map.OP_HASH160) return $q.reject(gettext('OP_HASH160 missing'));
-                    if (Bitcoin.convert.bytesToHex(chunks[2]) != Bitcoin.convert.bytesToHex(hash)) return $q.reject(gettext('Invalid pubkey hash'));
+                    if (BitcoinAux.bytesToHex(chunks[2]) != BitcoinAux.bytesToHex(hash)) return $q.reject(gettext('Invalid pubkey hash'));
                     if (chunks[3] != Bitcoin.Opcode.map.OP_EQUALVERIFY) return $q.reject(gettext('OP_EQUALVERIFY missing'));
                     if (chunks[4] != Bitcoin.Opcode.map.OP_CHECKSIG) return $q.reject(gettext('OP_CHECKSIG missing'));
                 } else if (version == cur_p2sh_version) {
                     if (chunks.length != 3) return $q.reject(gettext('Invalid out P2SH script length'));
                     if (chunks[0] != Bitcoin.Opcode.map.OP_HASH160) return $q.reject(gettext('out OP_HASH160 missing'));
-                    if (Bitcoin.convert.bytesToHex(chunks[1]) != Bitcoin.convert.bytesToHex(hash)) return $q.reject(gettext('Invalid out P2SH hash'));
+                    if (BitcoinAux.bytesToHex(chunks[1]) != BitcoinAux.bytesToHex(hash)) return $q.reject(gettext('Invalid out P2SH hash'));
                     if (chunks[2] != Bitcoin.Opcode.map.OP_EQUAL) return $q.reject(gettext('out OP_EQUAL missing'));
                 }
 
@@ -299,7 +299,7 @@ angular.module('greenWalletSendControllers',
             Bitcoin.Util.formatValue(new Bitcoin.BigInteger(amount_satoshi.toString()).multiply(Bitcoin.BigInteger.valueOf(mul))));
     }
     var parseContact = function(str) {
-        var json = Bitcoin.CryptoJS.enc.Utf8.stringify(Bitcoin.convert.bytesToWordArray(
+        var json = Bitcoin.CryptoJS.enc.Utf8.stringify(BitcoinAux.bytesToWordArray(
                         Bitcoin.base58.decode(str)));
         return JSON.parse(json);
     };
@@ -491,7 +491,7 @@ angular.module('greenWalletSendControllers',
                 if ($scope.wallet.send_from) priv_data.reddit_from = $scope.wallet.send_from;
                 that._encrypt_key(key).then(function(b58) {
                     if (that.voucher && that.passphrase) {
-                        priv_data.encrypted_key_hash = Bitcoin.convert.wordArrayToBytes(Bitcoin.Util.sha256ripe160(b58));
+                        priv_data.encrypted_key_hash = BitcoinAux.wordArrayToBytes(Bitcoin.Util.sha256ripe160(b58));
                     }
                     priv_data.allow_random_change = true;
                     priv_data.memo = that.memo;

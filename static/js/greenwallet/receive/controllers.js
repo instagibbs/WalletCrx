@@ -135,9 +135,9 @@ angular.module('greenWalletReceiveControllers',
                 }
                 var expChecksum = key_bytes.slice(-4);
                 key_bytes = key_bytes.slice(0, -4);
-                var key_words = Bitcoin.convert.bytesToWordArray(key_bytes);
+                var key_words = BitcoinAux.bytesToWordArray(key_bytes);
                 var checksum = Bitcoin.CryptoJS.SHA256(Bitcoin.CryptoJS.SHA256(key_words));
-                checksum = Bitcoin.convert.wordArrayToBytes(checksum);
+                checksum = BitcoinAux.wordArrayToBytes(checksum);
                 if (checksum[0] != expChecksum[0] || checksum[1] != expChecksum[1] || checksum[2] != expChecksum[2] || checksum[3] != expChecksum[3]) {
                     notices.makeNotice(gettext('Not a valid private key'));
                     return;
@@ -149,7 +149,7 @@ angular.module('greenWalletReceiveControllers',
                     key_bytes = key_bytes.slice(1);
                     var compressed = false;
                 }
-                do_sweep_key(new Bitcoin.ECKey(Bitcoin.convert.bytesToHex(key_bytes)));
+                do_sweep_key(new Bitcoin.ECKey(BitcoinAux.bytesToHex(key_bytes)));
             } else {
                 notices.makeNotice(gettext('Not a valid private key'));
                 return;
@@ -188,8 +188,8 @@ angular.module('greenWalletReceiveControllers',
         } else {
             gaEvent('Wallet', 'ReceiveShowBitcoinUri');
             tx_sender.call('http://greenaddressit.com/vault/fund', $scope.wallet.current_subaccount).then(function(data) {
-                var script = Bitcoin.convert.bytesToWordArray(Bitcoin.convert.hexToBytes(data));
-                var hash = Bitcoin.convert.wordArrayToBytes(Bitcoin.Util.sha256ripe160(script));
+                var script = BitcoinAux.bytesToWordArray(BitcoinAux.hexToBytes(data));
+                var hash = BitcoinAux.wordArrayToBytes(Bitcoin.Util.sha256ripe160(script));
                 var version = Bitcoin.network[cur_net].p2shVersion;
                 var address = new Bitcoin.Address(hash, version);
                 $scope.receive.bitcoin_address = address.toString();

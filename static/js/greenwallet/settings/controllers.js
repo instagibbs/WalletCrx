@@ -802,7 +802,7 @@ angular.module('greenWalletSettingsControllers',
     }
     $scope.send_url = function(contact) {
         return '#/send/' + Bitcoin.base58.encode(
-            Bitcoin.convert.hexToBytes(Bitcoin.CryptoJS.enc.Utf8.parse(
+            BitcoinAux.hexToBytes(Bitcoin.CryptoJS.enc.Utf8.parse(
                 JSON.stringify(contact)).toString()));
     };
 }]).controller('SoundController', ['$scope', 'notices', 'wallets', 'gaEvent', function SoundController($scope, notices, wallets, gaEvent) {
@@ -1224,14 +1224,14 @@ angular.module('greenWalletSettingsControllers',
                 return $q.when(k.derivePrivate(pointer)).then(function(k) {
                     return {
                         pub: k.pub.toHex(),
-                        chaincode: Bitcoin.convert.bytesToHex(k.chaincode)
+                        chaincode: BitcoinAux.bytesToHex(k.chaincode)
                     };
                 });
             });
         },
         _derive_btchip: function(pointer) {
             return $scope.wallet.btchip.app.getWalletPublicKey_async("3'/"+pointer+"'").then(function(result) {
-                var pub = new Bitcoin.ECPubKey(Bitcoin.convert.hexToBytes(result.publicKey.toString(HEX)));
+                var pub = new Bitcoin.ECPubKey(BitcoinAux.hexToBytes(result.publicKey.toString(HEX)));
                 return {
                     pub: pub.toHex(true),
                     chaincode: result.chainCode.toString(HEX)
@@ -1273,9 +1273,9 @@ angular.module('greenWalletSettingsControllers',
             }
             var derive_xpub = function(subaccount) {
                 var xpub = new Bitcoin.HDWallet();
-                xpub.pub = new Bitcoin.ECPubKey(Bitcoin.convert.hexToBytes(deposit_pubkey));
+                xpub.pub = new Bitcoin.ECPubKey(BitcoinAux.hexToBytes(deposit_pubkey));
                 xpub.network = cur_net;
-                xpub.chaincode = Bitcoin.convert.hexToBytes(deposit_chaincode);
+                xpub.chaincode = BitcoinAux.hexToBytes(deposit_chaincode);
                 xpub.depth = 0;
                 xpub.index = 0;
                 return $q.when(xpub.derive(branches.SUBACCOUNT)).then(function(xpub) {
@@ -1304,7 +1304,7 @@ angular.module('greenWalletSettingsControllers',
                             // we can't priv-derive 3'/subaccount' from a public key
                             var hdhex_recovery_d = $q.when({
                                 pub: hdwallet.pub.toHex(),
-                                chaincode: Bitcoin.convert.bytesToHex(hdwallet.chaincode)
+                                chaincode: BitcoinAux.bytesToHex(hdwallet.chaincode)
                             });
                         } else {
                             var hdhex_recovery_d = that._derive_hd(min_unused_pointer, hdwallet)

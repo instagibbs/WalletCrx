@@ -195,8 +195,8 @@ angular.module('greenWalletInfoControllers',
             }
             var expChecksum = bytes.slice(-4);
             bytes = bytes.slice(0, -4);
-            var checksum = Bitcoin.CryptoJS.SHA256(Bitcoin.CryptoJS.SHA256(Bitcoin.convert.bytesToWordArray(bytes)));
-            checksum = Bitcoin.convert.wordArrayToBytes(checksum);
+            var checksum = Bitcoin.CryptoJS.SHA256(Bitcoin.CryptoJS.SHA256(BitcoinAux.bytesToWordArray(bytes)));
+            checksum = BitcoinAux.wordArrayToBytes(checksum);
             if (checksum[0] != expChecksum[0] || checksum[1] != expChecksum[1] || checksum[2] != expChecksum[2] || checksum[3] != expChecksum[3]) {
                 deferred.reject(errors.invalid_unenc_privkey);
                 return deferred.promise;

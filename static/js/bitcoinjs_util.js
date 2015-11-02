@@ -109,7 +109,7 @@ if (self.cordova && cordova.platformId == 'ios') {
             var wallet = new Bitcoin.HDWallet();
             wallet.priv = new Bitcoin.ECKey(param[0], true);
             wallet.pub = new Bitcoin.ECPubKey(param[1], true);
-            wallet.chaincode = Bitcoin.convert.hexToBytes(param[2]);
+            wallet.chaincode = BitcoinAux.hexToBytes(param[2]);
             wallet.network = network;
             wallet.depth = 0;
             wallet.index = 0;
@@ -139,7 +139,7 @@ if (self.cordova && cordova.platformId == 'ios') {
             if (that.priv)
                 hd.priv = new Bitcoin.ECKey(param[0], true);
             hd.pub = new Bitcoin.ECPubKey(param[1], true);
-            hd.chaincode = Bitcoin.convert.hexToBytes(param[2]);
+            hd.chaincode = BitcoinAux.hexToBytes(param[2]);
 
             hd.parentFingerprint = that.getFingerprint();
             hd.depth = that.depth + 1;
@@ -157,11 +157,11 @@ if (self.cordova && cordova.platformId == 'ios') {
     Bitcoin.ECKey.prototype.sign = function(hash) {
         var deferred = $q.defer();
         cordova.exec(function(param) {
-            deferred.resolve(Bitcoin.convert.hexToBytes(param));
+            deferred.resolve(BitcoinAux.hexToBytes(param));
         }, function(fail) {
             console.log('ecdsa.sign failed: ' + fail)
             deferred.reject(fail);
-        }, "ECDSA", "sign", [this.toWif(), Bitcoin.convert.bytesToHex(hash)]);
+        }, "ECDSA", "sign", [this.toWif(), BitcoinAux.bytesToHex(hash)]);
         return deferred.promise;
     }
 } else {
@@ -256,7 +256,7 @@ if (self.cordova && cordova.platformId == 'ios') {
 
 Bitcoin.HDWallet.prototype.subpath = function(path_hex) {
     var key = $q.when(this);
-    var path_bytes = Bitcoin.convert.hexToBytes(path_hex);
+    var path_bytes = BitcoinAux.hexToBytes(path_hex);
     for (var i = 0; i < 32; i++) {
         key = key.then(function(key) {
             var dk = key.derive(+Bitcoin.BigInteger.fromByteArrayUnsigned(path_bytes.slice(0, 2)));;
@@ -271,7 +271,7 @@ Bitcoin.HDWallet.prototype.subpath_for_login = function(path_hex) {
     var key = $q.when(this);
     if (path_hex.length == 17 && path_hex[0] == '0') {  // new version with leading 0
         path_hex = path_hex.slice(1);
-        var path_bytes = Bitcoin.convert.hexToBytes(path_hex);
+        var path_bytes = BitcoinAux.hexToBytes(path_hex);
         for (var i = 0; i < 2; i++) {
             key = key.then(function(key) {
                 var dk = key.derive(+Bitcoin.BigInteger.fromByteArrayUnsigned(path_bytes.slice(0, 4)));
@@ -280,7 +280,7 @@ Bitcoin.HDWallet.prototype.subpath_for_login = function(path_hex) {
             });
         }
     } else {
-        var path_bytes = Bitcoin.convert.hexToBytes(path_hex);
+        var path_bytes = BitcoinAux.hexToBytes(path_hex);
         for (var i = 0; i < 4; i++) {
             key = key.then(function(key) {
                 var dk = key.derive(+Bitcoin.BigInteger.fromByteArrayUnsigned(path_bytes.slice(0, 2)));
@@ -322,18 +322,18 @@ Bitcoin.ECKey.decodeEncryptedFormat = function (base58Encrypted, passphrase, cur
 }
 
 Bitcoin.CryptoJS.AES.decryptCompat = function(bytes, key, opts) {
-    return Bitcoin.convert.wordArrayToBytes(
+    return BitcoinAux.wordArrayToBytes(
                 Bitcoin.CryptoJS.AES.decrypt(
                     Bitcoin.CryptoJS.lib.CipherParams.create({ciphertext:
-                        Bitcoin.convert.bytesToWordArray(bytes)}),
-                    Bitcoin.convert.bytesToWordArray(key),
+                        BitcoinAux.bytesToWordArray(bytes)}),
+                    BitcoinAux.bytesToWordArray(key),
                     opts));
 }
 
 Bitcoin.CryptoJS.AES.encryptCompat = function(bytes, key, opts) {
-    return Bitcoin.convert.wordArrayToBytes(Bitcoin.CryptoJS.AES.encrypt(
-        Bitcoin.convert.bytesToWordArray(bytes),
-        Bitcoin.convert.bytesToWordArray(key),
+    return BitcoinAux.wordArrayToBytes(Bitcoin.CryptoJS.AES.encrypt(
+        BitcoinAux.bytesToWordArray(bytes),
+        BitcoinAux.bytesToWordArray(key),
         opts).ciphertext);
 }
 
@@ -396,10 +396,10 @@ Bitcoin.BIP38 = (function () {
     if (typeof buf == "string") {
         buf = Bitcoin.CryptoJS.enc.Utf8.parse(buf);
     } else {
-        buf = Bitcoin.convert.bytesToWordArray(buf);
+        buf = BitcoinAux.bytesToWordArray(buf);
     }
     var hash = Bitcoin.CryptoJS.SHA256(buf);
-    hash = Bitcoin.convert.wordArrayToBytes(hash);
+    hash = BitcoinAux.wordArrayToBytes(hash);
     return hash;
   }
 
@@ -650,10 +650,10 @@ Bitcoin.BIP38 = (function () {
     // address using either compressed or uncompressed public key methodology (specify which methodology is used
     // inside flagbyte). This is the generated Bitcoin address, call it generatedAddress.
     var ec = ecparams.getCurve();
-    var generatedPoint = curveFpDecodePointHex(ec, Bitcoin.convert.bytesToHex(passpoint));
+    var generatedPoint = curveFpDecodePointHex(ec, BitcoinAux.bytesToHex(passpoint));
     var generatedBytes = generatedPoint.multiply(Bitcoin.BigInteger.fromByteArrayUnsigned(factorB)).getEncoded(compressed);
-    var generatedAddress = new Bitcoin.Address(Bitcoin.convert.wordArrayToBytes(Bitcoin.Util.sha256ripe160(
-        Bitcoin.convert.bytesToWordArray(generatedBytes))));
+    var generatedAddress = new Bitcoin.Address(BitcoinAux.wordArrayToBytes(Bitcoin.Util.sha256ripe160(
+        BitcoinAux.bytesToWordArray(generatedBytes))));
 
     // 4) Take the first four bytes of SHA256(SHA256(generatedaddress)) and call it addresshash.
     var addressHash = sha256(sha256(generatedAddress.toString())).slice(0,4);
@@ -783,10 +783,10 @@ Bitcoin.BIP38 = (function () {
     }
 
     var ec = ecparams.getCurve();
-    var generatedPoint = curveFpDecodePointHex(ec, Bitcoin.convert.bytesToHex(decrypted));
+    var generatedPoint = curveFpDecodePointHex(ec, BitcoinAux.bytesToHex(decrypted));
     var generatedBytes = generatedPoint.multiply(passfactor).getEncoded(compressed);
-    var generatedAddress = (new Bitcoin.Address(Bitcoin.convert.wordArrayToBytes(Bitcoin.Util.sha256ripe160(
-            Bitcoin.convert.bytesToWordArray(generatedBytes))))).toString();
+    var generatedAddress = (new Bitcoin.Address(BitcoinAux.wordArrayToBytes(Bitcoin.Util.sha256ripe160(
+            BitcoinAux.bytesToWordArray(generatedBytes))))).toString();
 
     var generatedAddressHash = sha256(sha256(generatedAddress)).slice(0,4);
 
@@ -882,13 +882,13 @@ Bitcoin.Transaction.prototype.cloneTransactionForSignature =
 Bitcoin.Transaction.prototype.serializeOutputs = function () {
   var buffer = []
 
-  buffer = buffer.concat(Bitcoin.convert.numToVarInt(this.outs.length))
+  buffer = buffer.concat(BitcoinAux.numToVarInt(this.outs.length))
 
   this.outs.forEach(function(txout) {
-    buffer = buffer.concat(Bitcoin.convert.numToBytes(txout.value,8))
+    buffer = buffer.concat(BitcoinAux.numToBytes(txout.value,8))
 
     var scriptBytes = txout.script.buffer
-    buffer = buffer.concat(Bitcoin.convert.numToVarInt(scriptBytes.length))
+    buffer = buffer.concat(BitcoinAux.numToVarInt(scriptBytes.length))
     buffer = buffer.concat(scriptBytes)
   })
 
