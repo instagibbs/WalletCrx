@@ -1,6 +1,7 @@
 var lang, usbDevices = {};
 
 var start = function() {
+	//console.log(cur_net);
     chrome.app.window.create(lang+'/wallet.html', {
         'bounds': {
             'width': 992,

@@ -42,7 +42,9 @@ angular.module('greenWalletMnemonicsServices', ['greenWalletServices'])
             var bits = words.length*11 - words.length/3;
             var retval = new Bitcoin.BigInteger(binary.substr(0, bits), 2).toByteArrayUnsigned();
             while (retval.length < bits/8) retval.unshift(0);
-
+	    for (var i=0; i<retval.length; i++) {
+                retval[i] = (retval[i]<0) ? retval[i] + 256 : retval[i]; 
+	    }
             var checksum = binary.substr(bits);
             var wordArray = BitcoinAux.bytesToWordArray(retval);
             var hash = BitcoinAux.wordArrayToBytes(Bitcoin.CryptoJS.SHA256(wordArray));

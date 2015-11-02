@@ -1,3 +1,10 @@
+if (cur_net === 'mainnet') {
+  cur_net = Bitcoin.networks.bitcoin
+}
+else if (cur_net === 'testnet') {
+  cur_net = Bitcoin.networks.testnet
+}
+
 var BitcoinAux =  {
 
   lpad : function(str, padString, length) {
