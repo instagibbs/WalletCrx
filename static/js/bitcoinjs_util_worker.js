@@ -8,7 +8,7 @@ if (!Module._secp256k1_context_randomize(Module.secp256k1ctx, randArr)) {
 	throw new Error("Couldn't initialize library, randomized failed");
 }
 
-Bitcoin.ECKey.prototype.getPub = function(compressed) {
+Bitcoin.ECPair.prototype.getPublicKeyBuffer = function(compressed) {
     if (compressed === undefined) compressed = this.compressed;
 
     var out = Module._malloc(128);
@@ -35,15 +35,15 @@ Bitcoin.ECKey.prototype.getPub = function(compressed) {
     Module._free(out_s);
     Module._free(secexp);
 
-    return Bitcoin.ECPubKey(ret, compressed)
+    return ret;//Bitcoin.ECPubKey(ret, compressed)
 };
 funcs = {
 	derive: function(data, cb) {
-		var wallet = Bitcoin.HDWallet.fromBase58(data.wallet);
+		var wallet = Bitcoin.HDNode.fromBase58(data.wallet);
 		return wallet.derive(data.i).toBase58(wallet.priv);
 	},
 	sign: function(data, cb) {
-		var key = new Bitcoin.ECKey(data.key);
+		var key = new Bitcoin.ECPair(data.key);
 
         var sig = Module._malloc(128);
         var siglen_p = Module._malloc(4);

@@ -103,11 +103,11 @@ if (self.cordova && cordova.platformId == 'ios') {
         };
     };
 
-    Bitcoin.HDWallet.fromSeedHex = cordovaReady(function(seed_hex, network) {
+    Bitcoin.HDNode.fromSeedHex = cordovaReady(function(seed_hex, network) {
         var deferred = $q.defer();
         cordova.exec(function(param) {
-            var wallet = new Bitcoin.HDWallet();
-            wallet.priv = new Bitcoin.ECKey(param[0], true);
+            var wallet = new Bitcoin.HDNode();
+            wallet.priv = new Bitcoin.ECPair(param[0], true);
             wallet.pub = new Bitcoin.ECPubKey(param[1], true);
             wallet.chaincode = BitcoinAux.hexToBytes(param[2]);
             wallet.network = network;
@@ -121,23 +121,23 @@ if (self.cordova && cordova.platformId == 'ios') {
         return deferred.promise;
     });
 
-    Bitcoin.HDWallet.prototype.derive = function(i) {
+    Bitcoin.HDNode.prototype.derive = function(i) {
         var deferred = $q.defer();
-        var usePriv = i >= Bitcoin.HDWallet.HIGHEST_BIT
+        var usePriv = i >= Bitcoin.HDNode.HIGHEST_BIT
 
         if (usePriv) {
-            i -= Bitcoin.HDWallet.HIGHEST_BIT;
+            i -= Bitcoin.HDNode.HIGHEST_BIT;
         }
 
         var that = this;
         var orig_network = this.network;
         this.network = 'mainnet';  // our BIP32 for iOS doesn't support testnet
         cordova.exec(function(param) {
-            var hd = new Bitcoin.HDWallet()
+            var hd = new Bitcoin.HDNode()
             hd.network = that.network
 
             if (that.priv)
-                hd.priv = new Bitcoin.ECKey(param[0], true);
+                hd.priv = new Bitcoin.ECPair(param[0], true);
             hd.pub = new Bitcoin.ECPubKey(param[1], true);
             hd.chaincode = BitcoinAux.hexToBytes(param[2]);
 
@@ -154,7 +154,7 @@ if (self.cordova && cordova.platformId == 'ios') {
         return deferred.promise;
     }
 
-    Bitcoin.ECKey.prototype.sign = function(hash) {
+    Bitcoin.ECPair.prototype.sign = function(hash) {
         var deferred = $q.defer();
         cordova.exec(function(param) {
             deferred.resolve(BitcoinAux.hexToBytes(param));
@@ -186,8 +186,8 @@ if (self.cordova && cordova.platformId == 'ios') {
             tag.parentNode.insertBefore(script, tag);
         });
 
-        no_secp256k1_getPub = Bitcoin.ECKey.prototype.getPub;
-        Bitcoin.ECKey.prototype.getPub = function(compressed) {
+        no_secp256k1_getPub = Bitcoin.ECPair.prototype.getPublicKeyBuffer;
+        Bitcoin.ECPair.prototype.getPub = function(compressed) {
             if (compressed === undefined) compressed = this.compressed;
             if (self.Module === undefined) {
                 // in case it's called before module finishes initialisation
@@ -227,10 +227,10 @@ if (self.cordova && cordova.platformId == 'ios') {
                 delete cbs[message.data.callId];
             }
 
-            Bitcoin.HDWallet.prototype.derive = function(i) {
+            Bitcoin.HDNode.prototype.derive = function(i) {
                 var deferred = $q.defer(), that = this;
                 cbs[++callId] = function(derived) {
-                    deferred.resolve(Bitcoin.HDWallet.fromBase58(derived));
+                    deferred.resolve(Bitcoin.HDNode.fromBase58(derived));
                 };
                 worker.postMessage({
                     func: 'derive',
@@ -240,7 +240,7 @@ if (self.cordova && cordova.platformId == 'ios') {
                 return deferred.promise;
             }
 
-            Bitcoin.ECKey.prototype.sign = function(hash) {
+            Bitcoin.ECPair.prototype.sign = function(hash) {
                 var deferred = $q.defer();
                 cbs[++callId] = deferred.resolve;
                 worker.postMessage({
@@ -254,7 +254,7 @@ if (self.cordova && cordova.platformId == 'ios') {
     }
 }
 
-Bitcoin.HDWallet.prototype.subpath = function(path_hex) {
+Bitcoin.HDNode.prototype.subpath = function(path_hex) {
     var key = $q.when(this);
     var path_bytes = BitcoinAux.hexToBytes(path_hex);
     for (var i = 0; i < 32; i++) {
@@ -266,7 +266,7 @@ Bitcoin.HDWallet.prototype.subpath = function(path_hex) {
     }
     return key;
 }
-Bitcoin.HDWallet.prototype.subpath_for_login = function(path_hex) {
+Bitcoin.HDNode.prototype.subpath_for_login = function(path_hex) {
     // derive private key for signing the challenge, using 8 bytes instead of 64
     var key = $q.when(this);
     if (path_hex.length == 17 && path_hex[0] == '0') {  // new version with leading 0
@@ -313,11 +313,11 @@ Bitcoin.scrypt = function(passwd, salt, N, r, p, dkLen) {
 /**
  * Private key encoded per BIP-38 (password encrypted, checksum,  base58)
  */
-Bitcoin.ECKey.prototype.getEncryptedFormat = function (passphrase, network) {
+Bitcoin.ECPair.prototype.getEncryptedFormat = function (passphrase, network) {
     return Bitcoin.BIP38.encode(this, passphrase, network);
 }
 
-Bitcoin.ECKey.decodeEncryptedFormat = function (base58Encrypted, passphrase, cur_net) {
+Bitcoin.ECPair.decodeEncryptedFormat = function (base58Encrypted, passphrase, cur_net) {
     return Bitcoin.BIP38.decode(base58Encrypted, passphrase, cur_net);
 }
 
@@ -337,7 +337,7 @@ Bitcoin.CryptoJS.AES.encryptCompat = function(bytes, key, opts) {
         opts).ciphertext);
 }
 
-Bitcoin.ECKey.prototype.getPrivateKeyByteArray = function () {
+Bitcoin.ECPair.prototype.getPrivateKeyByteArray = function () {
     // Get a copy of private key as a byte array
     var bytes = this.priv.toByteArrayUnsigned();
     // zero pad if private key is less than 32 bytes
@@ -409,7 +409,7 @@ Bitcoin.BIP38 = (function () {
   /**
    * Standard bitcoin curve - secp256k1
    */
-  var ecparams = Bitcoin.getSECCurveByName("secp256k1");
+  var ecparams = Bitcoin.curve.getCurveByName("secp256k1");//getSECCurveByName("secp256k1");
 
   /**
    * Random number generator
@@ -513,7 +513,7 @@ Bitcoin.BIP38 = (function () {
 
     var decrypted;
     var verifyHashAndReturn = function() {
-      var tmpkey = new Bitcoin.ECKey(decrypted, isCompPoint);
+      var tmpkey = new Bitcoin.ECPair(decrypted, isCompPoint);
 
       var address = tmpkey.getAddress(Bitcoin.network[cur_net].addressVersion);
       checksum = sha256(sha256(address.toString()));
@@ -543,7 +543,7 @@ Bitcoin.BIP38 = (function () {
         var prefactorB = prefactorA.concat(ownerentropy);
         passfactor = sha256(sha256(prefactorB));
       }
-      var kp = new Bitcoin.ECKey(passfactor);
+      var kp = new Bitcoin.ECPair(passfactor);
       kp.compressed = true;
       var passpoint = kp.getPub().toBytes();
 
